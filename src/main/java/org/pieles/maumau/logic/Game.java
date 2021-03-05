@@ -6,7 +6,7 @@
 package org.pieles.maumau.logic;
 
 import org.pieles.maumau.tui.TUI;
-import org.pieles.maumau.util.Util;
+import org.pieles.maumau.util.ListUtil;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
@@ -17,16 +17,14 @@ import java.util.Scanner;
  */
 public class Game {
 
-    Random rand = new Random();
-    Scanner scanner = new Scanner(System.in);
-
-    private ArrayList<String> cards;
-    private ArrayList<String> playerCards;
-    private ArrayList<String> computerCards;
-    private ArrayList<String> deskCards;
+    Random rand;
+    Scanner scanner;
+    CardManager manager;
 
     public Game() {
-        init();
+        rand = new Random();
+        scanner = new Scanner(System.in);
+        manager = new CardManager();
         gameLoop();
     }
 
@@ -34,34 +32,32 @@ public class Game {
         boolean gewonnen = false;
         do {
 
-            TUI.showPlayerCards(playerCards);
-            TUI.showLayingCard(deskCards);
+            TUI.showPlayerCards(manager.getPlayerCards());
+            TUI.showLayingCard(manager.getDeskCards());
             System.out.println("Welche Karte spielst Du [0 für nachziehen] ?");
-            int input = scanner.nextInt();
 
-            playerTurn(input);
+            playerTurn(scanner.nextInt());
             computerTurn();
 
-            if (playerCards.size() == 0 || computerCards.size() == 0) {
+            if (manager.getPlayerCards().size() == 0 || manager.getComputerCards().size() == 0) {
                 gewonnen = true;
             }
 
-
         } while (!gewonnen);
 
-        TUI.showWinningText(playerCards);
+        TUI.showWinningText(manager.getPlayerCards());
 
     }
 
     private void playerTurn(int input) {
         if (input == 0) {
-            drawCard(cards, playerCards);
-            System.out.println("Du ziehst " + playerCards.get(playerCards.size() - 1));
+            manager.drawCard(manager.getCards(), manager.getPlayerCards());
+            System.out.println("Du ziehst " + ListUtil.getLast(manager.getPlayerCards()));
         }
-        if (input > 0 && input <= playerCards.size()) {
-            if (check(playerCards.get(input - 1), Util.getLast(deskCards))) {
-                moveCard(input - 1, playerCards, deskCards);
-                System.out.println("Du legst " + deskCards.get(deskCards.size() - 1));
+        if (input > 0 && input <= manager.getPlayerCards().size()) {
+            if (check(manager.getPlayerCards().get(input - 1), ListUtil.getLast(manager.getDeskCards()))) {
+                manager.moveCard(input - 1, manager.getPlayerCards(), manager.getDeskCards());
+                System.out.println("Du legst " + ListUtil.getLast(manager.getDeskCards()));
             } else {
                 System.out.println("Du kannst diese Karte nicht legen, nimm eine andere");
             }
@@ -70,7 +66,7 @@ public class Game {
     }
 
     private void computerTurn() {
-        ArrayList<String> possibleCards = checkForMatch(deskCards.get(deskCards.size() - 1), computerCards);
+        ArrayList<String> possibleCards = checkForMatch(ListUtil.getLast(manager.getDeskCards()), manager.getComputerCards());
         if (possibleCards.size() > 0) {
             int index = 0;
             if (possibleCards.size() == 1) {
@@ -81,83 +77,28 @@ public class Game {
             }
 
             System.out.println(" >> Computer legt " + possibleCards.get(index));
-            computerCards.remove(possibleCards.get(index));
-            moveCard(index, possibleCards, deskCards);
+            manager.getComputerCards().remove(possibleCards.get(index));
+            manager.moveCard(index, possibleCards, manager.getDeskCards());
         } else {
-            drawCard(cards, computerCards);
-            System.out.println(" >> Computer zieht " + Util.getLast(computerCards));
+            manager.drawCard(manager.getCards(), manager.getComputerCards());
+            System.out.println(" >> Computer zieht " + ListUtil.getLast(manager.getComputerCards()));
         }
-    }
-
-    private void init() {
-        this.cards = generateCards();
-        this.playerCards = generatePlayerCards();
-        this.computerCards = generatePlayerCards();
-        this.deskCards = generateDeskCards();
-    }
-
-    private ArrayList<String> generateCards() {
-        ArrayList<String> cards = new ArrayList<>();
-        String[] colors = {"Kreuz", "Pik", "Herz", "Karo"};
-        String[] values = {"7", "8", "9", "10", "Bube", "Dame", "König", "Ass"};
-        for (int i = 0; i < colors.length; i++) {
-            for (int j = 0; j < values.length; j++) {
-                cards.add(colors[i] + " " + values[j]);
-            }
-        }
-        return cards;
-    }
-
-    private ArrayList<String> generatePlayerCards() {
-        ArrayList<String> playerCards = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            int index = rand.nextInt(cards.size() - 1);
-            moveCard(index, cards, playerCards);
-        }
-        return playerCards;
-    }
-
-    private ArrayList<String> generateDeskCards() {
-        ArrayList<String> deskCards = new ArrayList<>();
-        int index = rand.nextInt(cards.size() - 1);
-        moveCard(index, cards, deskCards);
-        return deskCards;
-    }
-
-    private void moveCard(int index, ArrayList<String> list1, ArrayList<String> list2) {
-        list2.add(list1.get(index));
-        list1.remove(index);
-    }
-
-    private void drawCard(ArrayList<String> list1, ArrayList<String> list2) {
-        if (list1.size() > 1) {
-            int index = rand.nextInt(list1.size() - 1);
-            moveCard(index, list1, list2);
-        } else {
-            System.out.println("Du kannst keine Karte mehr ziehen, der Stapel ist leer");
-        }
-
     }
 
     private ArrayList<String> checkForMatch(String card, ArrayList<String> computerCards) {
-        ArrayList<String> possibleCards = new ArrayList<String>();
-        for (int i = 0; i < computerCards.size() - 1; i++) {
-            String[] cardV = card.split(" ");
-            String[] cardAv = computerCards.get(i).split(" ");
-            if (cardV[0].equals(cardAv[0]) || cardV[1].equals(cardAv[1])) {
-                possibleCards.add(computerCards.get(i));
+        ArrayList<String> possibleCards = new ArrayList<>();
+        for (String computerCard : computerCards) {
+            if (check(card, computerCard)) {
+                possibleCards.add(computerCard);
             }
         }
         return possibleCards;
     }
 
     private boolean check(String card, String card2) {
-        String[] cardV = card.split(" ");
-        String[] cardAv = card2.split(" ");
-        if (cardV[0].equals(cardAv[0]) || cardV[1].equals(cardAv[1])) {
-            return true;
-        }
-        return false;
+        String[] cardValues = card.split(" ");
+        String[] card2Values = card2.split(" ");
+        return cardValues[0].equals(card2Values[0]) || cardValues[1].equals(card2Values[1]);
     }
 
 }

@@ -3,12 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pieles.maumau.main;
+package org.pieles.maumau.util;
+
+import java.util.ArrayList;
 
 /**
  *
  * @author jpi
  */
-public class NewClass {
+public class ListUtil {
+    
+    public static String getLast(ArrayList<String> list) {
+        return list.get(list.size() - 1);
+    }
     
 }
