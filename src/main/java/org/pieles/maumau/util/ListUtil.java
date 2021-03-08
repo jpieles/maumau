@@ -16,5 +16,6 @@ public class ListUtil {
     public static String getLast(ArrayList<String> list) {
         return list.get(list.size() - 1);
     }
+
     
 }

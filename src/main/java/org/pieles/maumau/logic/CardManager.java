@@ -75,6 +75,8 @@ public class CardManager {
         }
 
     }
+    
+    
 
     public ArrayList<String> getCards() {
         return cards;

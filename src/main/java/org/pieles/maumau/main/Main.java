@@ -29,7 +29,7 @@ public class Main {
         do {
             Game game = new Game();
             System.out.println("Willst du nochmal spielen? (y/n)");
-        }while(!scan.next().equals("y"));
+        }while(!scan.next().equals("n"));
     }
     
 }
